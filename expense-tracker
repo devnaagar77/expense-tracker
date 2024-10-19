@@ -1,0 +1,133 @@
+import java.io.*;
+import java.util.*;
+
+public class ExpenseTracker {
+    private final List<Expense> expenses = new ArrayList<>();
+
+    private static class Expense {
+        String category;
+        double amount;
+        String description;
+
+        Expense(String category, double amount, String description) {
+            this.category = category;
+            this.amount = amount;
+            this.description = description;
+        }
+    }
+
+    public void addExpense(String category, double amount, String description) {
+        expenses.add(new Expense(category, amount, description));
+    }
+
+    public void viewExpenses() {
+        if (expenses.isEmpty()) {
+            System.out.println("No expenses recorded.");
+            return;
+        }
+        System.out.println("Expenses:");
+        for (Expense expense : expenses) {
+            System.out.printf("%s: $%.2f - %s%n", expense.category, expense.amount, expense.description);
+        }
+    }
+
+    public void deleteExpense(int index) {
+        if (index >= 0 && index < expenses.size()) {
+            expenses.remove(index);
+            System.out.println("Expense removed.");
+        } else {
+            System.out.println("Invalid index.");
+        }
+    }
+
+    public void summary() {
+        Map<String, Double> categorySummary = new HashMap<>();
+        double total = 0;
+
+        for (Expense expense : expenses) {
+            categorySummary.put(expense.category, categorySummary.getOrDefault(expense.category, 0.0) + expense.amount);
+            total += expense.amount;
+        }
+
+        System.out.println("Expense Summary:");
+        for (Map.Entry<String, Double> entry : categorySummary.entrySet()) {
+            System.out.printf("%s: $%.2f%n", entry.getKey(), entry.getValue());
+        }
+        System.out.printf("Total: $%.2f%n", total);
+    }
+
+    public void saveToFile(String filename) {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
+            for (Expense expense : expenses) {
+                writer.write(expense.category + "," + expense.amount + "," + expense.description);
+                writer.newLine();
+            }
+            System.out.println("Expenses saved to file.");
+        } catch (IOException e) {
+            System.out.println("Error saving to file: " + e.getMessage());
+        }
+    }
+
+    public void loadFromFile(String filename) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(",");
+                if (parts.length == 3) {
+                    addExpense(parts[0], Double.parseDouble(parts[1]), parts[2]);
+                }
+            }
+            System.out.println("Expenses loaded from file.");
+        } catch (IOException e) {
+            System.out.println("Error loading from file: " + e.getMessage());
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid data format in file.");
+        }
+    }
+
+    public static void main(String[] args) {
+        ExpenseTracker tracker = new ExpenseTracker();
+        Scanner scanner = new Scanner(System.in);
+        String command;
+
+        tracker.loadFromFile("expenses.txt");
+
+        while (true) {
+            System.out.print("Enter command (add, view, delete, summary, save, quit): ");
+            command = scanner.nextLine();
+
+            switch (command.toLowerCase()) {
+                case "add":
+                    System.out.print("Category: ");
+                    String category = scanner.nextLine();
+                    System.out.print("Amount: ");
+                    double amount = Double.parseDouble(scanner.nextLine());
+                    System.out.print("Description: ");
+                    String description = scanner.nextLine();
+                    tracker.addExpense(category, amount, description);
+                    break;
+                case "view":
+                    tracker.viewExpenses();
+                    break;
+                case "delete":
+                    System.out.print("Enter expense index to delete: ");
+                    int index = Integer.parseInt(scanner.nextLine());
+                    tracker.deleteExpense(index);
+                    break;
+                case "summary":
+                    tracker.summary();
+                    break;
+                case "save":
+                    tracker.saveToFile("expenses.txt");
+                    break;
+                case "quit":
+                    tracker.saveToFile("expenses.txt");
+                    System.out.println("Exiting...");
+                    scanner.close();
+                    return;
+                default:
+                    System.out.println("Invalid command.");
+            }
+        }
+    }
+}
